@@ -2,11 +2,11 @@ package dockertest
 
 import (
 	"database/sql"
-	"fmt"
 	_ "github.com/lib/pq"
 	"os/exec"
 	"strings"
 	"testing"
+	"time"
 )
 
 func checkDocker(t *testing.T, name string) int {
@@ -42,7 +42,7 @@ func TestRunContainer(t *testing.T) {
 	}
 
 	err = container.Shutdown("postgres-test")
-	fmt.Println(err)
+	time.Sleep(time.Millisecond * 1500)
 
 	if count := checkDocker(t, "postgres-test"); count != 0 {
 		t.Fatal("container is still running after shutdown", count)

@@ -22,7 +22,6 @@ func (c *Container) Shutdown(name string) error {
 	argsFull := append([]string{"rm"}, "-f", name)
 	cmd := exec.Command("docker", argsFull...)
 	err := cmd.Start()
-	time.Sleep(time.Millisecond * 1500)
 	return err
 
 }
