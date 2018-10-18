@@ -2,14 +2,14 @@ package dockertest
 
 import (
 	"database/sql"
+	"fmt"
+	_ "github.com/lib/pq"
 	"os/exec"
 	"strings"
 	"testing"
-
-	_ "github.com/lib/pq"
 )
 
-func checkDocker(t *testing.T, container *Container) int {
+func checkDocker(t *testing.T, name string) int {
 	buf, err := exec.Command("docker", "ps").CombinedOutput()
 	if err != nil {
 		t.Fatalf("could not docker ps, %s", err)
@@ -18,7 +18,7 @@ func checkDocker(t *testing.T, container *Container) int {
 	lines := strings.Split(strings.TrimRight(string(buf), "\n"), "\n")
 	count := 0
 	for _, line := range lines {
-		if strings.Contains(line, container.Name) {
+		if strings.Contains(line, name) {
 			count++
 		}
 	}
@@ -26,7 +26,7 @@ func checkDocker(t *testing.T, container *Container) int {
 }
 
 func TestRunContainer(t *testing.T) {
-	container, err := RunContainer("postgres:alpine", "5432", func(addr string) error {
+	container, err := RunContainer("postgres:alpine", "postgres-test", "5432", func(addr string) error {
 		db, err := sql.Open("postgres", "postgres://postgres:postgres@"+addr+"?sslmode=disable")
 		if err != nil {
 			return err
@@ -37,13 +37,14 @@ func TestRunContainer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not start postgres, %s", err)
 	}
-	if count := checkDocker(t, container); count != 1 {
+	if count := checkDocker(t, "postgres-test"); count != 1 {
 		t.Fatal("container did not start or died early", count)
 	}
 
-	container.Shutdown()
+	err = container.Shutdown("postgres-test")
+	fmt.Println(err)
 
-	if count := checkDocker(t, container); count != 0 {
+	if count := checkDocker(t, "postgres-test"); count != 0 {
 		t.Fatal("container is still running after shutdown", count)
 	}
 }

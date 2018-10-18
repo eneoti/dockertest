@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -19,19 +18,23 @@ type Container struct {
 }
 
 // Shutdown ends the container
-func (c *Container) Shutdown() {
-	c.cmd.Process.Signal(syscall.SIGINT)
-	//  Wait till the process exits.
-	c.cmd.Wait()
+func (c *Container) Shutdown(name string) error {
+	argsFull := append([]string{"rm"}, "-f", name)
+	cmd := exec.Command("docker", argsFull...)
+	err := cmd.Start()
+	time.Sleep(time.Millisecond * 1500)
+	return err
+
 }
 
 // RunContainer runs a given docker container and returns a port on which the
 // container can be reached
-func RunContainer(container string, port string, waitFunc func(addr string) error, args ...string) (*Container, error) {
+func RunContainer(container string, name string, port string, waitFunc func(addr string) error, args ...string) (*Container, error) {
 	free := freePort()
 	host := getHost()
 	addr := fmt.Sprintf("%s:%d", host, free)
-	argsFull := append([]string{"run"}, args...)
+	argsFull := append([]string{"run"}, "-d", "--name", name)
+	argsFull = append(argsFull, args...)
 	argsFull = append(argsFull, "-p", fmt.Sprintf("%d:%s", free, port), container)
 	cmd := exec.Command("docker", argsFull...)
 	// run this in the background
